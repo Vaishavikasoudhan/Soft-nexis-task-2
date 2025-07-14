@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<script>
+/**
+ * Custom confirmation dialog that handles Enter (accept) and Escape (cancel) keys,
+ * and provides callback for both actions.
+ * Usage: showConfirmation("Are you sure?", onAccept, onCancel)
+ */
+function showConfirmation(message, onAccept, onCancel) {
+    // Remove any existing confirmation
+    const existing = document.getElementById('custom-confirmation');
+    if (existing) existing.remove();
+
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'custom-confirmation';
+    overlay.style.position = 'fixed';
+    overlay.style.top = 0;
+    overlay.style.left = 0;
+    overlay.style.width = '100vw';
+    overlay.style.height = '100vh';
+    overlay.style.background = 'rgba(0,0,0,0.3)';
+    overlay.style.display = 'flex';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
+    overlay.style.zIndex = 9999;
+
+    // Create dialog
+    const dialog = document.createElement('div'); 
+    dialog.style.background = '#fff';
+    dialog.style.padding = '2em 1.5em 1.5em 1.5em';
+    dialog.style.borderRadius = '8px';
+    dialog.style.boxShadow = '0 2px 16px rgba(0,0,0,0.2)';
+    dialog.style.minWidth = '280px';
+    dialog.style.maxWidth = '90vw';
+    dialog.style.textAlign = 'center';
+
+    // Message
+    const msg = document.createElement('div');
+    msg.textContent = message;
+    msg.style.marginBottom = '1.5em';
+    msg.style.fontSize = '1.1em';
+
+    // Buttons
+    const btnAccept = document.createElement('button');
+    btnAccept.textContent = 'OK';
+    btnAccept.style.marginRight = '1em';
+    btnAccept.style.padding = '0.5em 1.2em';
+    btnAccept.style.fontSize = '1em';
+    btnAccept.style.cursor = 'pointer';
+
+    const btnCancel = document.createElement('button');
+    btnCancel.textContent = 'Cancel';
+    btnCancel.style.padding = '0.5em 1.2em';
+    btnCancel.style.fontSize = '1em';
+    btnCancel.style.cursor = 'pointer';
+
+    // Button actions
+    btnAccept.onclick = () => {
+        overlay.remove();
+        if (typeof onAccept === 'function') onAccept();
+    };
+    btnCancel.onclick = () => {
+        overlay.remove();
+        if (typeof onCancel === 'function') onCancel();
+    };
+
+    // Keyboard actions
+    function keyHandler(e) {
+        if (e.key === 'Enter') {
+            btnAccept.click();
+        } else if (e.key === 'Escape') {
+            btnCancel.click();
+        }
+    }
+    overlay.addEventListener('keydown', keyHandler);
+
+    // Focus trap
+    setTimeout(() => btnAccept.focus(), 0);
+
+    // Compose dialog
+    dialog.appendChild(msg);
+    dialog.appendChild(btnAccept);
+    dialog.appendChild(btnCancel);
+    overlay.appendChild(dialog);
+
+    // Make overlay focusable and focus it to capture keyboard
+    overlay.tabIndex = -1;
+    document.body.appendChild(overlay);
+    overlay.focus();
+
+    // Remove event listener on close
+    overlay.addEventListener('remove', () => {
+        overlay.removeEventListener('keydown', keyHandler);
+    });
+}
+
+// Example usage (remove or adapt as needed):
+// showConfirmation("Are you sure you want to delete this task?", () => alert("Accepted!"), () => alert("Cancelled!"));
+</script>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskFlow Lite - Your client-side task management solution</title>
+    <meta name="description" content="A lightweight, client-side task management application built with vanilla JavaScript">
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/utilities.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="container">
+                <h1 class="app-title">
+                    <span class="app-icon">📋</span>
+                    TaskFlow Lite
+                </h1>
+                <p class="app-tagline">Your client-side task management solution</p>
+            </div>
+        </header>
+
+        <main class="app-main">
+            <div class="container">
+                <!-- Task Input Form -->
+                <section class="task-input-section">
+                    <form id="task-form" class="task-form" novalidate>
+                        <div class="input-group">
+                            <input 
+                                type="text" 
+                                id="task-input" 
+                                class="task-input" 
+                                placeholder="What needs to be done?"
+                                maxlength="200"
+                                required
+                                aria-label="Task description"
+                            >
+                            <button type="submit" class="add-task-btn" aria-label="Add task">
+                                <span class="btn-text">Add Task</span>
+                                <span class="btn-icon">+</span>
+                            </button>
+                        </div>
+                        <div class="validation-message" id="validation-message" aria-live="polite"></div>
+                    </form>
+                </section>
+
+                <!-- Task Controls -->
+                <section class="task-controls">
+                    <div class="controls-row">
+                        <div class="task-stats">
+                            <span class="stats-text">
+                                <span id="total-tasks">0</span> total,
+                                <span id="completed-tasks">0</span> completed
+                            </span>
+                        </div>
+                        <div class="filter-controls">
+                            <button class="filter-btn active" data-filter="all" aria-label="Show all tasks">All</button>
+                            <button class="filter-btn" data-filter="active" aria-label="Show active tasks">Active</button>
+                            <button class="filter-btn" data-filter="completed" aria-label="Show completed tasks">Completed</button>
+                        </div>
+                    </div>
+                    <div class="bulk-actions">
+                        <button id="clear-completed" class="clear-btn" aria-label="Clear completed tasks">
+                            Clear Completed
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Task List -->
+                <section class="task-list-section">
+                    <ul id="task-list" class="task-list" aria-label="Task list">
+                        <!-- Tasks will be dynamically rendered here -->
+                    </ul>
+                </section>
+
+                <!-- Empty State -->
+                <section class="empty-state" id="empty-state" hidden>
+                    <div class="empty-state-content">
+                        <div class="empty-state-icon">📝</div>
+                        <h2 class="empty-state-title">No tasks yet</h2>
+                        <p class="empty-state-description">Add your first task to get started!</p>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <footer class="app-footer">
+            <div class="container">
+                <p class="footer-text">
+                    Built with vanilla JavaScript • Data stored locally in your browser
+                </p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Confirmation Modal -->
+   
+
+    <script type="module" src="app.js"></script>
+</body>
+</html> 
